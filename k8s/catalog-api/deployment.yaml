@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-api
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: catalog-api
+
+  template:
+    metadata:
+      labels:
+        app: catalog-api
+
+    spec:
+      containers:
+      - name: catalog-api
+
+        image: game-store-orchestration-catalog-api:latest
+
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - containerPort: 8080
+
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: catalog-api-config
+              key: ASPNETCORE_ENVIRONMENT
+
+        - name: RABBITMQ_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: catalog-api-config
+              key: RABBITMQ_HOST
+
+        - name: ConnectionStrings__Database
+          valueFrom:
+            secretKeyRef:
+              name: catalog-api-secret
+              key: CONNECTION_STRING

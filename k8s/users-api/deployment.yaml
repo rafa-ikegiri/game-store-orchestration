@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users-api
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: users-api
+
+  template:
+    metadata:
+      labels:
+        app: users-api
+
+    spec:
+      containers:
+      - name: users-api
+
+        image: game-store-orchestration-users-api:v2
+
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - containerPort: 8080
+
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: users-api-config
+              key: ASPNETCORE_ENVIRONMENT
+
+        - name: RABBITMQ_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: users-api-config
+              key: RABBITMQ_HOST
+
+        - name: ConnectionStrings__Database
+          valueFrom:
+            secretKeyRef:
+              name: users-api-secret
+              key: CONNECTION_STRING
+
+        - name: Jwt__Secret
+          valueFrom:
+            secretKeyRef:
+              name: users-api-secret
+              key: JWT_SECRET
