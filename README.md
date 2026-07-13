@@ -157,7 +157,7 @@ E-mail de confirmação da compra
 
 # 🛠️ Tecnologias Utilizadas
 
-- .NET 8
+- .NET 10
 - ASP.NET Core
 - Entity Framework Core
 - SQL Server
