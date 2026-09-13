@@ -1,28 +1,31 @@
-# FIAP Cloud Games - Tech Challenge Fase 2
+# FIAP Cloud Games - Tech Challenge Fase 3
 
 ## 📋 Sobre o Projeto
 
-A FIAP Cloud Games (FCG) é uma plataforma para gerenciamento e compra de jogos digitais.
+A FIAP Cloud Games (FCG) é uma plataforma para gerenciamento e compra de jogos digitais baseada em microsserviços. 
 
-Nesta fase do Tech Challenge, a aplicação foi evoluída de uma arquitetura monolítica para uma arquitetura baseada em microsserviços orientados a eventos, utilizando RabbitMQ para comunicação assíncrona entre os serviços.
+Nesta **Fase 3** do Tech Challenge, a arquitetura foi evoluída para resolver desafios críticos de **exposição segura de serviços, visibilidade sistêmica, otimização de recursos ociosos e alta performance**, implementando:
+1. **API Gateway (Kong):** Ponto de entrada unificado, roteamento e validação de tokens JWT.
+2. **Arquitetura Serverless (NotificationsAPI):** Migração do microsserviço de notificações para um modelo reativo acionado por mensageria, eliminando containers ociosos 24/7.
+3. **Stack de Observabilidade (Prometheus & Grafana):** Coleta de métricas nativas OpenTelemetry/ASP.NET Core e dashboards em tempo real (**Latência, Throughput e Erros**).
+4. **Persistência Poliglota e Cache Distribuído:** Integração com **MongoDB** (para dados flexíveis/avaliações) e **Redis** (para cache de alta performance), acompanhado do **Redis Insight** para monitoramento visual.
 
 ---
 
-# 🏗️ Arquitetura
+# 🏗️ Arquitetura e Componentes
 
-A solução é composta pelos seguintes microsserviços:
+A solução é composta pelos seguintes microsserviços e serviços de infraestrutura:
 
-- UsersAPI
-- CatalogAPI
-- PaymentsAPI
-- NotificationsAPI
-
-Além dos serviços de infraestrutura:
-
-- SQL Server
-- RabbitMQ
-- Docker
-- Kubernetes
+- **Kong API Gateway:** Gateway de borda / Ponto de entrada único
+- **UsersAPI:** Gestão de usuários, autenticação e JWT (.NET)
+- **CatalogAPI:** Gestão do catálogo, cache, NoSQL e início de compras (.NET)
+- **PaymentsAPI:** Processamento de pagamentos (.NET)
+- **NotificationsAPI (Serverless):** Envio de notificações orientadas a eventos
+- **SQL Server:** Bancos relacionais transacionais
+- **MongoDB:** Banco NoSQL para alta volumetria / dados flexíveis
+- **Redis & Redis Insight:** Camada de cache distribuído e interface visual
+- **RabbitMQ:** Barramento de mensageria assíncrona
+- **Prometheus & Grafana:** Stack de observabilidade e métricas
 
 ---
 
@@ -35,348 +38,43 @@ Além dos serviços de infraestrutura:
 - PaymentsAPI: https://github.com/rafa-ikegiri/PaymentsAPI
 - NotificationsAPI: https://github.com/rafa-ikegiri/NotificationsAPI
 
-## Infraestrutura
+## Infraestrutura e Orquestração
 
 - game-store-orchestration: https://github.com/rafa-ikegiri/game-store-orchestration
 
 ---
 
-# 🧩 Microsserviços
+# 🔗 Portas e Endereços Úteis (Endpoints)
 
-## UsersAPI
-
-Responsável por:
-
-- Cadastro de usuários
-- Login
-- Geração de JWT
-- Autorização baseada em Roles
-
-### Eventos Publicados
-
-- UserCreatedEvent
-
----
-
-## CatalogAPI
-
-Responsável por:
-
-- CRUD de jogos
-- Consulta do catálogo
-- Biblioteca de jogos do usuário
-- Início do fluxo de compra
-
-### Eventos Publicados
-
-- OrderPlacedEvent
-
-### Eventos Consumidos
-
-- PaymentProcessedEvent
+| Serviço | Porta / URL Local | Descrição |
+| :--- | :--- | :--- |
+| **API Gateway (Kong Proxy)** | `http://localhost:8000` | Ponto de entrada único para o cliente |
+| **Kong Admin API** | `http://localhost:8001` | Gerenciamento de rotas e plugins do Kong |
+| **Grafana (Observabilidade)** | `http://localhost:3000` | Dashboards em tempo real (`admin` / `admin`) |
+| **Prometheus** | `http://localhost:9090` | Coleta de métricas e targets |
+| **Redis Insight (Cache UI)** | `http://localhost:5540` | Interface visual para monitoramento do cache Redis |
+| **RabbitMQ Management** | `http://localhost:15672` | Painel da mensageria (`guest` / `guest`) |
+| **CatalogAPI (.NET)** | `http://localhost:5002` | Microsserviço de catálogo e endpoint `/metrics` |
+| **UsersAPI (.NET)** | `http://localhost:5001` | Microsserviço de usuários |
+| **PaymentsAPI (.NET)** | `http://localhost:5003` | Microsserviço de pagamentos |
 
 ---
 
-## PaymentsAPI
+# 📊 Observabilidade (Prometheus & Grafana)
 
-Responsável por:
-
-- Processamento de pagamentos (simulado)
-
-### Eventos Consumidos
-
-- OrderPlacedEvent
-
-### Eventos Publicados
-
-- PaymentProcessedEvent
-
----
-
-## NotificationsAPI
-
-Responsável por:
-
-- Envio de e-mail de boas-vindas (simulado)
-- Envio de confirmação de compra (simulado)
-
-### Eventos Consumidos
-
-- UserCreatedEvent
-- PaymentProcessedEvent
-
----
-
-# 🔄 Fluxos de Negócio
-
-## Cadastro de Usuário
-
-```text
-UsersAPI
-    ↓
-UserCreatedEvent
-    ↓
-RabbitMQ
-    ↓
-NotificationsAPI
-    ↓
-E-mail de boas-vindas
-```
-
----
-
-## Compra de Jogo
-
-```text
-CatalogAPI
-    ↓
-OrderPlacedEvent
-    ↓
-RabbitMQ
-    ↓
-PaymentsAPI
-    ↓
-PaymentProcessedEvent
-    ↓
-RabbitMQ
-    ↓
-CatalogAPI
-    ↓
-Adiciona o jogo à biblioteca do usuário
-```
-
-```text
-RabbitMQ
-    ↓
-NotificationsAPI
-    ↓
-E-mail de confirmação da compra
-```
-
----
-
-# 🛠️ Tecnologias Utilizadas
-
-- .NET 10
-- ASP.NET Core
-- Entity Framework Core
-- SQL Server
-- RabbitMQ
-- Docker
-- Docker Compose
-- Kubernetes
-- JWT Authentication
-- FluentValidation
-- Serilog
-
----
-
-# 📦 Estrutura do Repositório
-
-```text
-game-store-orchestration
-│
-├── README.md
-├── .gitignore
-├── docker-compose.yml
-│
-└── k8s
-    ├── rabbitmq
-    │   ├── deployment.yaml
-    │   ├── service.yaml
-    │   └── secret.yaml
-    │
-    ├── sqlserver
-    │   ├── deployment.yaml
-    │   ├── service.yaml
-    │   └── secret.yaml
-    │
-    ├── users-api
-    │   ├── deployment.yaml
-    │   ├── service.yaml
-    │   ├── configmap.yaml
-    │   └── secret.yaml
-    │
-    ├── catalog-api
-    │   ├── deployment.yaml
-    │   ├── service.yaml
-    │   ├── configmap.yaml
-    │   └── secret.yaml
-    │
-    ├── payments-api
-    │   ├── deployment.yaml
-    │   ├── service.yaml
-    │   ├── configmap.yaml
-    │   └── secret.yaml
-    │
-    └── notifications-api
-        ├── deployment.yaml
-        ├── service.yaml
-        ├── configmap.yaml
-        └── secret.yaml
-```
-
----
-
-# ☸️ Recursos Kubernetes
-
-A infraestrutura Kubernetes da solução utiliza:
-
-- Deployments
-- Services
-- ConfigMaps
-- Secrets
-
-Todos os manifestos Kubernetes foram centralizados neste repositório para facilitar a implantação e manutenção da aplicação.
+A instrumentação utiliza as métricas nativas do ASP.NET Core moderno. No **Grafana**, o dashboard da Fase 3 monitora em tempo real:
+- **Throughput:** `sum(rate(microsoft_aspnetcore_hosting_http_server_request_duration_count[1m]))`
+- **Latência Média:** `sum(rate(microsoft_aspnetcore_hosting_http_server_request_duration_sum[1m])) / sum(rate(microsoft_aspnetcore_hosting_http_server_request_duration_count[1m])) * 1000`
+- **Taxa de Erros (4xx/5xx):** `sum(rate(microsoft_aspnetcore_hosting_http_server_request_duration_count{http_response_status_code=~"[45].*"}[1m]))`
 
 ---
 
 # 🚀 Executando com Docker Compose
 
 ## Pré-requisitos
-
 - Docker Desktop
 - Docker Compose
 
-## Executar a solução
-
+## Executar a solução completa
 ```bash
-docker-compose up -d
-```
-
-## Verificar os containers
-
-```bash
-docker ps
-```
-
----
-
-# ☸️ Deploy no Kubernetes
-
-## Pré-requisitos
-
-- Docker Desktop Kubernetes habilitado
-- kubectl
-
-## Aplicar os manifestos
-
-```bash
-kubectl apply -f k8s/
-```
-
-## Verificar os recursos
-
-### Deployments
-
-```bash
-kubectl get deployments
-```
-
-### Services
-
-```bash
-kubectl get services
-```
-
-### Pods
-
-```bash
-kubectl get pods
-```
-
----
-
-# 🔐 ConfigMaps e Secrets
-
-## ConfigMaps
-
-Utilizados para armazenar configurações não sensíveis:
-
-- Ambiente da aplicação
-- Host do RabbitMQ
-- Configurações gerais
-
-## Secrets
-
-Utilizados para armazenar informações sensíveis:
-
-- Senha do SQL Server
-- Connection Strings
-- Chave JWT
-- Credenciais do RabbitMQ
-
----
-
-# 🗄️ Banco de Dados
-
-O ambiente utiliza SQL Server como banco de dados principal.
-
-### Bases de Dados
-
-- UsersDb
-- CatalogDb
-- PaymentsDb
-
-As tabelas são criadas através de migrations do Entity Framework Core.
-
----
-
-# 📨 Mensageria
-
-Broker utilizado:
-
-- RabbitMQ
-
-Eventos implementados:
-
-- UserCreatedEvent
-- OrderPlacedEvent
-- PaymentProcessedEvent
-
----
-
-# ✅ Funcionalidades Validadas
-
-## Cadastro de Usuário
-
-- Usuário cadastrado com sucesso
-- UserCreatedEvent publicado
-- NotificationsAPI consumiu o evento
-- E-mail de boas-vindas enviado
-
-## Compra de Jogo
-
-- OrderPlacedEvent publicado
-- PaymentsAPI processou o pagamento
-- PaymentProcessedEvent publicado
-- CatalogAPI atualizou a biblioteca do usuário
-- NotificationsAPI enviou confirmação da compra
-
----
-
-# 📹 Demonstração
-
-Durante a apresentação serão demonstrados:
-
-- Estrutura dos microsserviços
-- Execução com Docker Compose
-- RabbitMQ
-- SQL Server
-- Kubernetes
-- Deployments
-- Services
-- ConfigMaps
-- Secrets
-- Fluxo de cadastro
-- Fluxo de compra
-- Consumo dos eventos
-- Logs dos consumidores
-
----
-
-# 👨‍💻 Autor
-
-Rafael Ikegiri Cardoso
-
-Tech Challenge - FIAP Cloud Games
+docker-compose up -d --build
