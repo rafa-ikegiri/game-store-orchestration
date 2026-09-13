@@ -1,0 +1,20 @@
+_format_version: "3.0"
+
+services:
+  - name: users-service
+    url: http://users-api:8080
+    routes:
+      - name: users-route
+        paths:
+          - /api/users
+          - /api/auth
+        strip_path: false
+
+  - name: catalog-service
+    url: http://catalog-api:8080
+    routes:
+      - name: catalog-route
+        paths:
+          - /api/catalog
+          - /api/games
+        strip_path: false

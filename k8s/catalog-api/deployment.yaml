@@ -2,43 +2,38 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: catalog-api
-
 spec:
   replicas: 1
-
   selector:
     matchLabels:
       app: catalog-api
-
   template:
     metadata:
       labels:
         app: catalog-api
-
+      # ADICIONAMOS ESTAS ANOTAÇÕES PARA O PROMETHEUS ACHAR A API:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: catalog-api
-
-        image: game-store-orchestration-catalog-api:latest
-
+        image: game-store-orchestration-catalog-api:v3
         imagePullPolicy: IfNotPresent
-
         ports:
         - containerPort: 8080
-
         env:
         - name: ASPNETCORE_ENVIRONMENT
           valueFrom:
             configMapKeyRef:
               name: catalog-api-config
               key: ASPNETCORE_ENVIRONMENT
-
         - name: RABBITMQ_HOST
           valueFrom:
             configMapKeyRef:
               name: catalog-api-config
               key: RABBITMQ_HOST
-
         - name: ConnectionStrings__Database
           valueFrom:
             secretKeyRef:

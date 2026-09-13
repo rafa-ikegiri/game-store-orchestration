@@ -22,6 +22,24 @@ services:
       - "5672:5672"
       - "15672:15672"
 
+  redis:
+    image: redis:alpine
+    container_name: redis
+    
+    ports:
+      - "6379:6379"
+
+  # ==================================================
+  # Container do MongoDB
+  # ==================================================
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+
   users-api:
     build:
       context: ../UsersAPI
@@ -51,10 +69,17 @@ services:
     depends_on:
       - sqlserver
       - rabbitmq
+      - redis
+      - mongodb
 
     environment:
-      ConnectionStrings__Database: Server=sqlserver,1433;Database=CatalogDb;User Id=sa;Password=Senha@123456;TrustServerCertificate=True
-      RABBITMQ_HOST: rabbitmq
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CatalogDb;User Id=sa;Password=Senha@123456;TrustServerCertificate=True
+      - ConnectionStrings__Database=Server=sqlserver,1433;Database=CatalogDb;User Id=sa;Password=Senha@123456;TrustServerCertificate=True
+      - ConnectionStrings__CatalogDbContext=Server=sqlserver,1433;Database=CatalogDb;User Id=sa;Password=Senha@123456;TrustServerCertificate=True
+      - ConnectionStrings__Redis=redis:6379
+      - ConnectionStrings__Mongo=mongodb://mongodb:27017
+      - DatabaseName__Mongo=CatalogReviewsDb
+      - RABBITMQ_HOST=rabbitmq
 
   payments-api:
     build:
@@ -88,5 +113,66 @@ services:
     environment:
       RABBITMQ_HOST: rabbitmq
 
+  # ==================================================
+  # Redis Insight (Interface Gráfica para o Redis)
+  # ==================================================
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "5540:5540"
+    restart: always
+
+  # ==================================================
+  # API Gateway (Kong em modo DB-less)
+  # ==================================================
+  kong:
+    image: kong:latest
+    container_name: kong
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    volumes:
+      - ./kong.yml:/etc/kong/kong.yml
+    depends_on:
+      - users-api
+      - catalog-api     
+
+  # ==================================================
+  # ADICIONADO: Prometheus para coleta de métricas
+  # ==================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.enable-lifecycle' # <--- ISSO LIBERA O RELOAD VIA HTTP
+    restart: always
+
+  # ==================================================
+  # ADICIONADO: Grafana para visualização dos dashboards
+  # ==================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+
 volumes:
   sqlserver-data:
+  mongodb-data:
